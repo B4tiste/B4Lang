@@ -204,8 +204,6 @@ void print_ast_tree(ASTNode *node, int indent, int is_left)
     }
 }
 
-#include <stdio.h>
-
 void export_ast_to_dot(FILE *file, ASTNode *node, int *node_count)
 {
     if (!node)

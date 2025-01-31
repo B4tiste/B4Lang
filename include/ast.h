@@ -42,4 +42,7 @@ void free_ast(ASTNode *node);
 void print_ast(ASTNode *node);
 void print_ast_tree(ASTNode *node, int indent, int is_left);
 
+void save_ast_to_dot(ASTNode *root, const char *filename);
+void export_ast_to_dot(FILE *file, ASTNode *node, int *node_count);
+
 #endif

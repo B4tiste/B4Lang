@@ -7,10 +7,10 @@
 // Analyse une expression récursivement (3 + y * 2)
 ASTNode *parse_expression(FILE *file)
 {
-    ASTNode *left = NULL;
     Token token = get_next_token(file);
+    ASTNode *left = NULL;
 
-    // Si c'est une variable ou un nombre, on crée un nœud
+    // ✅ Si c'est un nombre ou une variable, on crée un nœud
     if (token.type == TOKEN_NUMBER || token.type == TOKEN_IDENTIFIER)
     {
         left = malloc(sizeof(ASTNode));
@@ -18,12 +18,23 @@ ASTNode *parse_expression(FILE *file)
         strcpy(left->variable, token.value);
         left->left = left->right = NULL;
     }
+    // ✅ Si c'est une parenthèse ouvrante, traiter l'expression entre parenthèses
+    else if (token.type == TOKEN_SYMBOL && strcmp(token.value, "(") == 0)
+    {
+        left = parse_expression(file);
+        Token closing = get_next_token(file);
+        if (closing.type != TOKEN_SYMBOL || strcmp(closing.value, ")") != 0)
+        {
+            printf("Erreur de syntaxe : Parenthèse fermante `)` manquante\n");
+            return NULL;
+        }
+    }
     else
     {
-        return NULL; // Si ce n'est ni un nombre ni une variable, on retourne NULL
+        return NULL; // ❌ Si ce n'est ni une variable, ni un nombre, ni une parenthèse
     }
 
-    // Lire un opérateur (ex: +, -, *, /, >, <, ==, !=)
+    // ✅ Lire un opérateur (ex: +, -, *, /, >, <, ==, !=)
     token = get_next_token(file);
     if (token.type == TOKEN_SYMBOL &&
         (strcmp(token.value, "+") == 0 || strcmp(token.value, "-") == 0 ||
@@ -31,12 +42,11 @@ ASTNode *parse_expression(FILE *file)
          strcmp(token.value, ">") == 0 || strcmp(token.value, "<") == 0 ||
          strcmp(token.value, "==") == 0 || strcmp(token.value, "!=") == 0))
     {
-
-        ASTNode *right = parse_expression(file); // Lire la partie droite de l'expression
+        ASTNode *right = parse_expression(file); // ✅ Lire la partie droite de l'expression
         return create_expression_node(token.value, left, right);
     }
 
-    // Si ce n'est pas un opérateur, remettre le token dans le flux
+    // ✅ Si ce n'est pas un opérateur, remettre le token dans le flux
     ungetc(token.value[0], file);
     return left;
 }
@@ -178,31 +188,46 @@ ASTNode *parse(FILE *file)
                 current = node;
             }
         }
-        else if (token.type == TOKEN_IDENTIFIER)
+        else if (token.type == TOKEN_IDENTIFIER) // ✅ Détection d'une affectation
         {
-            // Affectation (x = ...)
+            printf("PARSE DEBUG: Détection d'un identifiant -> %s\n", token.value); // Debug
+
             char var[MAX_TOKEN_LENGTH];
             strcpy(var, token.value);
 
             Token eq = get_next_token(file);
-            if (eq.type == TOKEN_SYMBOL && strcmp(eq.value, "=") == 0)
+            if (eq.type == TOKEN_SYMBOL && strcmp(eq.value, "=") == 0) // ✅ Vérifier que c'est une affectation
             {
-                ASTNode *expr = parse_expression(file);
+                printf("PARSE DEBUG: Affectation détectée pour -> %s\n", var); // Debug
+
+                ASTNode *expr = parse_expression(file); // ✅ Lire l'expression
                 Token semi = get_next_token(file);
 
                 if (semi.type == TOKEN_SYMBOL && strcmp(semi.value, ";") == 0)
                 {
                     ASTNode *node = create_assignment_node(var, expr);
+
                     if (!head)
                     {
                         head = node;
+                        current = node;
                     }
                     else
                     {
-                        current->next = node;
+                        current->next = node; // ✅ Ajoute à l'AST
+                        current = node;
                     }
-                    current = node;
+
+                    printf("DEBUG: Affectation ajoutée -> %s\n", var);
                 }
+                else
+                {
+                    printf("Erreur de syntaxe : `;` manquant après l'affectation de `%s`\n", var);
+                }
+            }
+            else
+            {
+                printf("Erreur de syntaxe : Symbole `=` attendu après `%s`\n", var);
             }
         }
     }

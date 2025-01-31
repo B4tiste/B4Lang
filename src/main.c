@@ -31,6 +31,7 @@ int main(void)
         // print_ast(ast);
         printf("\n=== AST sous forme d'arbre ===\n");
         print_ast_tree(ast, 0, 0); // ✅ Nouvelle version avec des traits de liaison
+        save_ast_to_dot(ast, "ast.dot");
         free_ast(ast);
     }
     else
