@@ -267,7 +267,7 @@ ASTNode *parse(FILE *file)
             }
             current = fn_node;
         }
-        else if (token.type == TOKEN_IDENTIFIER)
+        else if (token.type == TOKEN_IDENTIFIER && false)
         {
             // Vérifier si c'est un appel de fonction
             Token next = get_next_token(file);
@@ -333,7 +333,6 @@ ASTNode *parse(FILE *file)
         }
         else if (token.type == TOKEN_IDENTIFIER) // ✅ Détection d'une affectation
         {
-            printf("PARSE DEBUG: Détection d'un identifiant -> %s\n", token.value); // Debug
 
             char var[MAX_TOKEN_LENGTH];
             strcpy(var, token.value);
@@ -341,7 +340,6 @@ ASTNode *parse(FILE *file)
             Token eq = get_next_token(file);
             if (eq.type == TOKEN_SYMBOL && strcmp(eq.value, "=") == 0) // ✅ Vérifier que c'est une affectation
             {
-                printf("PARSE DEBUG: Affectation détectée pour -> %s\n", var); // Debug
 
                 ASTNode *expr = parse_expression(file); // ✅ Lire l'expression
                 Token semi = get_next_token(file);
@@ -360,8 +358,6 @@ ASTNode *parse(FILE *file)
                         current->next = node; // ✅ Ajoute à l'AST
                         current = node;
                     }
-
-                    printf("DEBUG: Affectation ajoutée -> %s\n", var);
                 }
                 else
                 {

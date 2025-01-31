@@ -1,0 +1,14 @@
+int x;
+int y;
+
+x = 100;
+y = 10;
+
+if (x > y)
+{
+    return x;
+}
+else
+{
+    return y;
+}

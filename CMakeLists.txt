@@ -15,10 +15,11 @@ set(SOURCES
     src/ast.c
     src/parser.c
     src/lexer.c
+    src/compiler.c
 )
 
 # Définir l'exécutable
-add_executable(B4lang ${SOURCES})
+add_executable(b4lang ${SOURCES})
 
 # Ajouter des options de compilation
-target_compile_options(B4lang PRIVATE -Wall -Wextra)
+target_compile_options(b4lang PRIVATE -Wall -Wextra)
