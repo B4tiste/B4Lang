@@ -62,6 +62,20 @@ ASTNode *create_expression_node(char *op, ASTNode *left, ASTNode *right)
     return node;
 }
 
+// Créer un noeud pour un IF/ELSE
+ASTNode *create_if_node(ASTNode *condition, ASTNode *then_branch, ASTNode *else_branch)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+
+    node->type = NODE_IF;
+    node->condition = condition;
+    node->then_branch = then_branch;
+    node->else_branch = else_branch;
+    node->next = NULL;
+
+    return node;
+}
+
 // Libère la mémoire de l'AST
 void free_ast(ASTNode *node)
 {
@@ -127,7 +141,6 @@ void print_ast_tree(ASTNode *node, int indent, int is_left)
     if (!node)
         return;
 
-    // Affichage des traits de liaison pour représenter l'arbre
     for (int i = 0; i < indent - 1; i++)
     {
         printf("  │ ");
@@ -137,7 +150,8 @@ void print_ast_tree(ASTNode *node, int indent, int is_left)
         printf(is_left ? "  ├─ " : "  └─ ");
     }
 
-    // Afficher le type de nœud
+    // printf("%s ", node_type_string[node->type]);
+
     switch (node->type)
     {
     case NODE_DECLARATION:
@@ -146,12 +160,24 @@ void print_ast_tree(ASTNode *node, int indent, int is_left)
 
     case NODE_ASSIGNMENT:
         printf("Affectation: %s\n", node->variable);
-        print_ast_tree(node->left, indent + 1, 1); // Indenter pour la valeur affectée
+        print_ast_tree(node->left, indent + 1, 1);
         break;
 
     case NODE_RETURN:
         printf("Return\n");
-        print_ast_tree(node->left, indent + 1, 0); // Indenter pour la valeur retournée
+        print_ast_tree(node->left, indent + 1, 0);
+        break;
+
+    case NODE_IF:
+        printf("Condition `if`\n");
+        print_ast_tree(node->condition, indent + 1, 1);
+        printf("  ├─ Bloc `if`\n");
+        print_ast_tree(node->then_branch, indent + 1, 1);
+        if (node->else_branch)
+        {
+            printf("  └─ Bloc `else`\n");
+            print_ast_tree(node->else_branch, indent + 1, 0);
+        }
         break;
 
     case NODE_EXPRESSION:
@@ -172,7 +198,6 @@ void print_ast_tree(ASTNode *node, int indent, int is_left)
         break;
     }
 
-    // Passer au nœud suivant (prochaine instruction)
     if (node->next)
     {
         print_ast_tree(node->next, indent, 0);

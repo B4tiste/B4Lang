@@ -2,5 +2,10 @@ int x;
 int y;
 y = 2;
 x = (3 + (y * 2));
-return x;
+if (x > 4) {
+    y = 4;
+} else {
+    y = 5;
+}
+return y;
 

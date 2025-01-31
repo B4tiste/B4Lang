@@ -7,37 +7,38 @@
 // Analyse une expression récursivement (3 + y * 2)
 ASTNode *parse_expression(FILE *file)
 {
+    ASTNode *left = NULL;
     Token token = get_next_token(file);
 
-    // Si c'est un nombre ou une variable on retourne un noeud de valeur
+    // Si c'est une variable ou un nombre, on crée un nœud
     if (token.type == TOKEN_NUMBER || token.type == TOKEN_IDENTIFIER)
     {
-        ASTNode *node = malloc(sizeof(ASTNode));
-
-        node->type = NODE_EXPRESSION;
-        strcpy(node->variable, token.value);
-        node->left = node->right = NULL;
-
-        return node;
+        left = malloc(sizeof(ASTNode));
+        left->type = NODE_EXPRESSION;
+        strcpy(left->variable, token.value);
+        left->left = left->right = NULL;
     }
-
-    // Si c'est une parenthèse ouvrante, on analyse l'expression à l'intérieur
-    if (token.type == TOKEN_SYMBOL && strcmp(token.value, "(") == 0)
+    else
     {
-        ASTNode *left = parse_expression(file);
-        Token op = get_next_token(file); // Opérateur
-        ASTNode *right = parse_expression(file);
-        Token closing = get_next_token(file); // ")"
-
-        if (closing.type != TOKEN_SYMBOL || strcmp(closing.value, ")") != 0)
-        {
-            printf("Erreur de syntaxte : Parenthèse fermante manquante\n");
-        }
-
-        return create_expression_node(op.value, left, right);
+        return NULL; // Si ce n'est ni un nombre ni une variable, on retourne NULL
     }
 
-    return NULL;
+    // Lire un opérateur (ex: +, -, *, /, >, <, ==, !=)
+    token = get_next_token(file);
+    if (token.type == TOKEN_SYMBOL &&
+        (strcmp(token.value, "+") == 0 || strcmp(token.value, "-") == 0 ||
+         strcmp(token.value, "*") == 0 || strcmp(token.value, "/") == 0 ||
+         strcmp(token.value, ">") == 0 || strcmp(token.value, "<") == 0 ||
+         strcmp(token.value, "==") == 0 || strcmp(token.value, "!=") == 0))
+    {
+
+        ASTNode *right = parse_expression(file); // Lire la partie droite de l'expression
+        return create_expression_node(token.value, left, right);
+    }
+
+    // Si ce n'est pas un opérateur, remettre le token dans le flux
+    ungetc(token.value[0], file);
+    return left;
 }
 
 // Fonction pour parser le code
@@ -68,6 +69,94 @@ ASTNode *parse(FILE *file)
                 }
                 current = node;
             }
+        }
+        else if (token.type == TOKEN_KEYWORD && strcmp(token.value, "if") == 0)
+        {
+            // Lire '('
+            Token open_paren = get_next_token(file);
+            if (strcmp(open_paren.value, "(") != 0)
+            {
+                printf("Erreur de syntaxe : `if` sans parenthèse ouvrante `(` \n");
+                return NULL;
+            }
+
+            // Lire toute la condition (ex: x > 4)
+            ASTNode *condition = parse_expression(file);
+
+            // Lire ')'
+            Token close_paren = get_next_token(file);
+            if (strcmp(close_paren.value, ")") != 0)
+            {
+                printf("Erreur de syntaxe : parenthèse fermante `)` manquante dans `if`\n");
+                return NULL;
+            }
+
+            // Lire `{`
+            Token open_brace = get_next_token(file);
+            if (strcmp(open_brace.value, "{") != 0)
+            {
+                printf("Erreur de syntaxe : accolade ouvrante `{` manquante dans `if`\n");
+                return NULL;
+            }
+
+            // Lire le bloc `if`
+            ASTNode *then_branch = parse(file);
+
+            // Lire `}`
+            Token close_brace = get_next_token(file);
+            if (strcmp(close_brace.value, "}") != 0)
+            {
+                printf("Erreur de syntaxe : accolade fermante `}` manquante dans `if`\n");
+                return NULL;
+            }
+
+            // Vérifier s'il y a un `else`
+            ASTNode *else_branch = NULL;
+            Token next_token = get_next_token(file);
+            if (next_token.type == TOKEN_KEYWORD && strcmp(next_token.value, "else") == 0)
+            {
+                // Lire `{`
+                Token open_brace_else = get_next_token(file);
+                if (strcmp(open_brace_else.value, "{") != 0)
+                {
+                    printf("Erreur de syntaxe : accolade ouvrante `{` manquante dans `else`\n");
+                    return NULL;
+                }
+
+                // Lire le bloc `else`
+                else_branch = parse(file);
+
+                // Lire `}`
+                Token close_brace_else = get_next_token(file);
+                if (strcmp(close_brace_else.value, "}") != 0)
+                {
+                    printf("Erreur de syntaxe : accolade fermante `}` manquante dans `else`\n");
+                    return NULL;
+                }
+            }
+            else
+            {
+                // Si ce n'est pas `else`, remettre le token dans le flux
+                ungetc(next_token.value[0], file);
+            }
+
+            // Créer le nœud `if`
+            ASTNode *node = create_if_node(condition, then_branch, else_branch);
+            if (!head)
+            {
+                head = node;
+            }
+            else
+            {
+                current->next = node;
+            }
+            current = node;
+        }
+        else if (token.type == TOKEN_SYMBOL && strcmp(token.value, "}") == 0)
+        {
+            // ✅ Arrêter le parsing du bloc en remettant `}` dans le flux
+            ungetc(token.value[0], file);
+            return head;
         }
         else if (token.type == TOKEN_KEYWORD && strcmp(token.value, "return") == 0)
         {
