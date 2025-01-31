@@ -1,3 +1,9 @@
 /.vscode
 /bin/
 /build/
+ast.dot
+ast.png
+script.b4l.out
+script.b4l.o
+script.b4l.s
+script.b4l
