@@ -203,3 +203,86 @@ void print_ast_tree(ASTNode *node, int indent, int is_left)
         print_ast_tree(node->next, indent, 0);
     }
 }
+
+#include <stdio.h>
+
+void export_ast_to_dot(FILE *file, ASTNode *node, int *node_count)
+{
+    if (!node)
+        return;
+
+    int current_id = (*node_count)++;
+
+    // Définir l'étiquette du nœud
+    switch (node->type)
+    {
+    case NODE_DECLARATION:
+        fprintf(file, "    node%d [label=\"Déclaration: %s\"];\n", current_id, node->variable);
+        break;
+    case NODE_ASSIGNMENT:
+        fprintf(file, "    node%d [label=\"Affectation: %s\"];\n", current_id, node->variable);
+        break;
+    case NODE_RETURN:
+        fprintf(file, "    node%d [label=\"Return\"];\n", current_id);
+        break;
+    case NODE_IF:
+        fprintf(file, "    node%d [label=\"Condition IF\"];\n", current_id);
+        break;
+    case NODE_EXPRESSION:
+        fprintf(file, "    node%d [label=\"%s\"];\n", current_id, node->variable);
+        break;
+    default:
+        fprintf(file, "    node%d [label=\"Inconnu\"];\n", current_id);
+        break;
+    }
+
+    // Exporter les relations
+    if (node->left)
+    {
+        int left_id = *node_count;
+        export_ast_to_dot(file, node->left, node_count);
+        fprintf(file, "    node%d -> node%d;\n", current_id, left_id);
+    }
+    if (node->right)
+    {
+        int right_id = *node_count;
+        export_ast_to_dot(file, node->right, node_count);
+        fprintf(file, "    node%d -> node%d;\n", current_id, right_id);
+    }
+    if (node->then_branch)
+    {
+        int then_id = *node_count;
+        export_ast_to_dot(file, node->then_branch, node_count);
+        fprintf(file, "    node%d -> node%d [label=\"IF\"];\n", current_id, then_id);
+    }
+    if (node->else_branch)
+    {
+        int else_id = *node_count;
+        export_ast_to_dot(file, node->else_branch, node_count);
+        fprintf(file, "    node%d -> node%d [label=\"ELSE\"];\n", current_id, else_id);
+    }
+    if (node->next)
+    {
+        int next_id = *node_count;
+        export_ast_to_dot(file, node->next, node_count);
+        fprintf(file, "    node%d -> node%d [style=dashed];\n", current_id, next_id);
+    }
+}
+
+void save_ast_to_dot(ASTNode *root, const char *filename)
+{
+    FILE *file = fopen(filename, "w");
+    if (!file)
+    {
+        perror("Erreur ouverture fichier DOT");
+        return;
+    }
+
+    fprintf(file, "digraph AST {\n");
+    int node_count = 0;
+    export_ast_to_dot(file, root, &node_count);
+    fprintf(file, "}\n");
+
+    fclose(file);
+    printf("AST exporté dans '%s'\n", filename);
+}
