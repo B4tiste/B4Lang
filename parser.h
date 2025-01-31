@@ -3,6 +3,7 @@
 
 #include "ast.h"
 
+ASTNode *parse_expression(FILE *file);
 ASTNode *parse(FILE *file);
 
 #endif

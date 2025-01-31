@@ -4,7 +4,17 @@
 #include "lexer.h"
 
 // Liste des mots clés disponibles
-const char *keywords[] = {"int", "return", "print", NULL};  // ✅ Define it here only
+const char *keywords[] = {"int", "return", "print", NULL}; // ✅ Define it here only
+
+// Tableau des strings des types de token
+const char token_type_string[6][MAX_TOKEN_LENGTH] = {
+    "TOKEN_INT",
+    "TOKEN_IDENTIFIER",
+    "TOKEN_NUMBER",
+    "TOKEN_SYMBOL",
+    "TOKEN_KEYWORD",
+    "TOKEN_EOF",
+};
 
 bool is_keyword(const char *str)
 {
@@ -26,18 +36,22 @@ Token get_next_token(FILE *file)
     Token token;
 
     // Ignorer les espaces et \n
-    while ((c = fgetc(file)) != EOF && isspace(c));
+    while ((c = fgetc(file)) != EOF && isspace(c))
+    {
+    }
 
     // Token de fin de fichier
     if (c == EOF)
     {
         token.type = TOKEN_EOF;
         strcpy(token.value, "EOF");
+
+        // print_token(token);
         return token;
     }
 
     // Token keyword ou identifiant (int/return VS var_a/var_b)
-    if (isalpha(c) || c =='_')
+    if (isalpha(c) || c == '_')
     {
         char buffer[MAX_TOKEN_LENGTH] = {c};
         int i = 1;
@@ -50,6 +64,8 @@ Token get_next_token(FILE *file)
 
         token.type = is_keyword(buffer) ? TOKEN_KEYWORD : TOKEN_IDENTIFIER;
         strcpy(token.value, buffer);
+
+        // print_token(token);
         return token;
     }
 
@@ -67,6 +83,8 @@ Token get_next_token(FILE *file)
 
         token.type = TOKEN_NUMBER;
         strcpy(token.value, buffer);
+
+        // print_token(token);
         return token;
     }
 
@@ -75,5 +93,12 @@ Token get_next_token(FILE *file)
     token.value[0] = c;
     token.value[1] = '\0';
 
+    // print_token(token);
     return token;
+}
+
+// Debug
+void print_token(Token token)
+{
+    printf("Token : %s -> %s\n", token_type_string[token.type], token.value);
 }

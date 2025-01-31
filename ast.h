@@ -3,25 +3,36 @@
 
 #include "lexer.h"
 
+// Tableau des strings des types de node
+extern const char node_type_string[4][MAX_TOKEN_LENGTH];
+
 // Différents types de noeuds
-typedef enum {
-    NODE_ASSIGNMENT,
-    NODE_RETURN,
-    NODE_EXPRESSION,
+typedef enum
+{
+    NODE_DECLARATION, // int x;
+    NODE_ASSIGNMENT,  // x = 42;
+    NODE_RETURN,      // return x;
+    NODE_EXPRESSION,  // x + y * 2;
 } NodeType;
 
 // Structure d'un noeud AST
-typedef struct ASTNode {
-    NodeType type;                      // Type du noeud
-    char variable[MAX_TOKEN_LENGTH];    // Nom de la variable
-    char value[MAX_TOKEN_LENGTH];       // Valeur
-    struct ASTNode *next;               // Prochaine noeud
+typedef struct ASTNode
+{
+    NodeType type;                   // Type du noeud
+    char variable[MAX_TOKEN_LENGTH]; // Nom de la variable
+    char value[MAX_TOKEN_LENGTH];    // Valeur
+    struct ASTNode *left;            // Pour stocker les expressions
+    struct ASTNode *right;           // x = (left + right)
+    struct ASTNode *next;            // Prochaine noeud
 } ASTNode;
 
 // Fonctions de gestion de l'AST
-ASTNode *create_assignment_node(char *var, char *val);
-ASTNode *create_return_node(char *var);
-void print_ast(ASTNode *node);
+ASTNode *create_declaration_node(char *var);
+ASTNode *create_assignment_node(char *var, ASTNode *expr);
+ASTNode *create_return_node(ASTNode *expr);
+ASTNode *create_expression_node(char *op, ASTNode *left, ASTNode *right);
 void free_ast(ASTNode *node);
+void print_ast(ASTNode *node);
+void print_ast_tree(ASTNode *node, int indent, int is_left);
 
 #endif
