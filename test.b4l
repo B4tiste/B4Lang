@@ -2,10 +2,16 @@ int x;
 int y;
 y = 2;
 x = (3 + (y * 2));
+
 if (x > 4) {
     y = 4;
 } else {
     y = 5;
 }
-return y;
 
+fn add(a, b) {
+    return a + b;
+}
+
+y = add(y, 3);
+return y;

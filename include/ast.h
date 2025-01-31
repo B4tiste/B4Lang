@@ -9,12 +9,14 @@ extern const char node_type_string[4][MAX_TOKEN_LENGTH];
 // Différents types de noeuds
 typedef enum
 {
-    NODE_DECLARATION, // int x;
-    NODE_ASSIGNMENT,  // x = 42;
-    NODE_RETURN,      // return x;
-    NODE_EXPRESSION,  // x + y * 2;
-    NODE_IF,          // Condition IF
-    NODE_ELSE,        // Condition ELSE
+    NODE_DECLARATION,  // int x;
+    NODE_ASSIGNMENT,   // x = 42;
+    NODE_RETURN,       // return x;
+    NODE_EXPRESSION,   // x + y * 2;
+    NODE_IF,           // Condition IF
+    NODE_ELSE,         // Condition ELSE
+    NODE_FUNCTION_DEF, // fn add(a, b) { return a + b; }
+    NODE_FUNCTION_CALL // add(3, 4)
 } NodeType;
 
 // Structure d'un noeud AST
@@ -29,6 +31,8 @@ typedef struct ASTNode
     struct ASTNode *condition;       // Condition
     struct ASTNode *then_branch;     // Bloc IF
     struct ASTNode *else_branch;     // Bloc ELSE
+    struct ASTNode *parameters;      // Pour stocker les paramètres de la fonction
+    struct ASTNode *body;            // Corps de la fonction
 } ASTNode;
 
 // Fonctions de gestion de l'AST
@@ -37,6 +41,8 @@ ASTNode *create_assignment_node(char *var, ASTNode *expr);
 ASTNode *create_return_node(ASTNode *expr);
 ASTNode *create_expression_node(char *op, ASTNode *left, ASTNode *right);
 ASTNode *create_if_node(ASTNode *condition, ASTNode *then_branch, ASTNode *else_branch);
+ASTNode *create_function_node(char *name, ASTNode *parameters, ASTNode *body);
+ASTNode *create_function_call_node(char *name, ASTNode *arguments);
 
 void free_ast(ASTNode *node);
 void print_ast(ASTNode *node);

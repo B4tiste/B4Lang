@@ -4,7 +4,7 @@
 #include "lexer.h"
 
 // Liste des mots clés disponibles
-const char *keywords[] = {"int", "return", "print", "if", "else", NULL}; // ✅ Define it here only
+const char *keywords[] = {"int", "return", "print", "if", "else", "fn", NULL}; // ✅ Define it here only
 
 // Tableau des strings des types de token
 const char token_type_string[6][MAX_TOKEN_LENGTH] = {

@@ -76,6 +76,33 @@ ASTNode *create_if_node(ASTNode *condition, ASTNode *then_branch, ASTNode *else_
     return node;
 }
 
+// Création d'un nœud de fonction
+ASTNode *create_function_node(char *name, ASTNode *parameters, ASTNode *body)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+
+    node->type = NODE_FUNCTION_DEF;
+    strcpy(node->variable, name);
+    node->parameters = parameters;
+    node->body = body;
+    node->next = NULL;
+
+    return node;
+}
+
+// Création d'un nœud d'appel de fonction
+ASTNode *create_function_call_node(char *name, ASTNode *arguments)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+
+    node->type = NODE_FUNCTION_CALL;
+    strcpy(node->variable, name);
+    node->parameters = arguments;
+    node->next = NULL;
+
+    return node;
+}
+
 // Libère la mémoire de l'AST
 void free_ast(ASTNode *node)
 {
@@ -86,53 +113,6 @@ void free_ast(ASTNode *node)
     free_ast(node->next);
 
     free(node);
-}
-
-// Fonction debuf d'affichage de l'AST
-void print_ast(ASTNode *node)
-{
-    while (node)
-    {
-        switch (node->type)
-        {
-        case NODE_DECLARATION:
-            printf("Déclaration: %s\n", node->variable);
-            break;
-
-        case NODE_ASSIGNMENT:
-            printf("Affectation: %s = ", node->variable);
-            print_ast(node->left); // ✅ Afficher l'expression assignée
-            printf("\n");
-            break;
-
-        case NODE_RETURN:
-            printf("Return: ");
-            print_ast(node->left); // ✅ Afficher l'expression retournée
-            printf("\n");
-            break;
-
-        case NODE_EXPRESSION:
-            if (node->left && node->right)
-            { // Si c'est une opération (ex: 3 + y)
-                printf("(");
-                print_ast(node->left);
-                printf(" %s ", node->variable);
-                print_ast(node->right);
-                printf(")");
-            }
-            else
-            { // Si c'est juste un nombre ou une variable
-                printf("%s", node->variable);
-            }
-            break;
-
-        default:
-            printf("Node inconnu\n");
-            break;
-        }
-
-        node = node->next;
-    }
 }
 
 // Affichage détaillé
@@ -193,6 +173,20 @@ void print_ast_tree(ASTNode *node, int indent, int is_left)
         }
         break;
 
+    case NODE_FUNCTION_DEF:
+        printf("Déclaration de fonction: %s\n", node->variable);
+        printf("  ├─ Paramètres\n");
+        print_ast_tree(node->parameters, indent + 1, 1);
+        printf("  └─ Corps\n");
+        print_ast_tree(node->body, indent + 1, 0);
+        break;
+
+    case NODE_FUNCTION_CALL:
+        printf("Appel de fonction: %s\n", node->variable);
+        printf("  ├─ Arguments\n");
+        print_ast_tree(node->parameters, indent + 1, 0);
+        break;
+
     default:
         printf("Nœud inconnu\n");
         break;
@@ -211,54 +205,78 @@ void export_ast_to_dot(FILE *file, ASTNode *node, int *node_count)
 
     int current_id = (*node_count)++;
 
-    // Définir l'étiquette du nœud
+    // Définir l'étiquette du nœud en fonction de son type
     switch (node->type)
     {
     case NODE_DECLARATION:
-        fprintf(file, "    node%d [label=\"Déclaration: %s\"];\n", current_id, node->variable);
+        fprintf(file, "    node%d [label=\"Déclaration: %s\", shape=box];\n", current_id, node->variable);
         break;
     case NODE_ASSIGNMENT:
-        fprintf(file, "    node%d [label=\"Affectation: %s\"];\n", current_id, node->variable);
+        fprintf(file, "    node%d [label=\"Affectation: %s\", shape=box];\n", current_id, node->variable);
         break;
     case NODE_RETURN:
-        fprintf(file, "    node%d [label=\"Return\"];\n", current_id);
+        fprintf(file, "    node%d [label=\"Return\", shape=box];\n", current_id);
         break;
     case NODE_IF:
-        fprintf(file, "    node%d [label=\"Condition IF\"];\n", current_id);
+        fprintf(file, "    node%d [label=\"Condition IF\", shape=diamond];\n", current_id);
         break;
     case NODE_EXPRESSION:
-        fprintf(file, "    node%d [label=\"%s\"];\n", current_id, node->variable);
+        fprintf(file, "    node%d [label=\"%s\", shape=circle];\n", current_id, node->variable);
+        break;
+    case NODE_FUNCTION_DEF:
+        fprintf(file, "    node%d [label=\"Fonction: %s\", shape=hexagon];\n", current_id, node->variable);
+        break;
+    case NODE_FUNCTION_CALL:
+        fprintf(file, "    node%d [label=\"Appel de fonction: %s\", shape=ellipse];\n", current_id, node->variable);
         break;
     default:
-        fprintf(file, "    node%d [label=\"Inconnu\"];\n", current_id);
+        fprintf(file, "    node%d [label=\"Inconnu\", shape=octagon];\n", current_id);
         break;
     }
 
     // Exporter les relations
+    if (node->parameters)
+    {
+        int param_id = *node_count;
+        export_ast_to_dot(file, node->parameters, node_count);
+        fprintf(file, "    node%d -> node%d [label=\"Paramètres\"];\n", current_id, param_id);
+    }
+
+    if (node->body)
+    {
+        int body_id = *node_count;
+        export_ast_to_dot(file, node->body, node_count);
+        fprintf(file, "    node%d -> node%d [label=\"Corps\"];\n", current_id, body_id);
+    }
+
     if (node->left)
     {
         int left_id = *node_count;
         export_ast_to_dot(file, node->left, node_count);
         fprintf(file, "    node%d -> node%d;\n", current_id, left_id);
     }
+
     if (node->right)
     {
         int right_id = *node_count;
         export_ast_to_dot(file, node->right, node_count);
         fprintf(file, "    node%d -> node%d;\n", current_id, right_id);
     }
+
     if (node->then_branch)
     {
         int then_id = *node_count;
         export_ast_to_dot(file, node->then_branch, node_count);
         fprintf(file, "    node%d -> node%d [label=\"IF\"];\n", current_id, then_id);
     }
+
     if (node->else_branch)
     {
         int else_id = *node_count;
         export_ast_to_dot(file, node->else_branch, node_count);
         fprintf(file, "    node%d -> node%d [label=\"ELSE\"];\n", current_id, else_id);
     }
+
     if (node->next)
     {
         int next_id = *node_count;
@@ -277,10 +295,14 @@ void save_ast_to_dot(ASTNode *root, const char *filename)
     }
 
     fprintf(file, "digraph AST {\n");
+    fprintf(file, "    rankdir=TB;\n"); // Orientation de haut en bas
+    fprintf(file, "    node [style=filled, fontname=\"Arial\"];\n");
+
     int node_count = 0;
     export_ast_to_dot(file, root, &node_count);
-    fprintf(file, "}\n");
 
+    fprintf(file, "}\n");
     fclose(file);
+
     printf("AST exporté dans '%s'\n", filename);
 }
