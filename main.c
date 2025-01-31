@@ -7,7 +7,7 @@
 
 int main(void)
 {
-    FILE *file = fopen("test.b4l", "r");
+    FILE *file = fopen("/home/batiste/Documents/B4lang/test.b4l", "r");
     if (!file)
     {
         perror("Erreur d'ouverture du fichier");
