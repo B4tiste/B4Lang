@@ -1,1 +1,1 @@
-dot -Tpng /home/batiste/Documents/B4lang/ast.dot -o /home/batiste/Documents/B4lang/ast.png
+dot -Tpng /home/batiste//Documents/B4Lang/ast.dot -o /home/batiste/Documents/B4Lang/ast.png

@@ -51,7 +51,7 @@ void generate_assembly_from_ast(FILE *file, ASTNode *node)
     switch (node->type)
     {
     case NODE_DECLARATION:
-        // ✅ Ne pas redéfinir la variable dans `.text`
+        // Ne pas redéfinir la variable dans la section .text
         break;
 
     case NODE_ASSIGNMENT:
@@ -63,34 +63,75 @@ void generate_assembly_from_ast(FILE *file, ASTNode *node)
     case NODE_EXPRESSION:
         if (node->left && node->right)
         {
-            // ✅ Comparaison ou opération mathématique
+            // Évaluer l'opérande gauche
             generate_assembly_from_ast(file, node->left);
             fprintf(file, "    push rax\n");
+
+            // Évaluer l'opérande droite
             generate_assembly_from_ast(file, node->right);
             fprintf(file, "    pop rbx\n");
+
+            // Échanger les registres pour que rax = gauche et rbx = droite
+            fprintf(file, "    xchg rax, rbx\n");
 
             if (strcmp(node->variable, "+") == 0)
                 fprintf(file, "    add rax, rbx\n");
             else if (strcmp(node->variable, "-") == 0)
-                fprintf(file, "    sub rax, rbx\n");
+                fprintf(file, "    sub rax, rbx\n"); // Calcule : gauche - droite
             else if (strcmp(node->variable, "*") == 0)
                 fprintf(file, "    imul rax, rbx\n");
             else if (strcmp(node->variable, "/") == 0)
             {
-                fprintf(file, "    cqo\n"); // Extension de rax pour division
-                fprintf(file, "    idiv rbx\n");
+                fprintf(file, "    cqo\n");      // Extension de rax pour la division
+                fprintf(file, "    idiv rbx\n"); // Calcule : gauche / droite
             }
+            // Comparaison pour ">"
             else if (strcmp(node->variable, ">") == 0)
             {
-                fprintf(file, "    cmp rbx, rax\n"); // Vérifier `rbx > rax`
-                fprintf(file, "    setg al\n");      // Mettre 1 si vrai
+                fprintf(file, "    cmp rax, rbx\n");
+                fprintf(file, "    setg al\n");
+                fprintf(file, "    movzx rax, al\n");
+            }
+            // Comparaison pour "<"
+            else if (strcmp(node->variable, "<") == 0)
+            {
+                fprintf(file, "    cmp rax, rbx\n");
+                fprintf(file, "    setl al\n");
+                fprintf(file, "    movzx rax, al\n");
+            }
+            // Comparaison pour ">="
+            else if (strcmp(node->variable, ">=") == 0)
+            {
+                fprintf(file, "    cmp rax, rbx\n");
+                fprintf(file, "    setge al\n");
+                fprintf(file, "    movzx rax, al\n");
+            }
+            // Comparaison pour "<="
+            else if (strcmp(node->variable, "<=") == 0)
+            {
+                fprintf(file, "    cmp rax, rbx\n");
+                fprintf(file, "    setle al\n");
+                fprintf(file, "    movzx rax, al\n");
+            }
+            // Comparaison pour "=="
+            else if (strcmp(node->variable, "==") == 0)
+            {
+                fprintf(file, "    cmp rax, rbx\n");
+                fprintf(file, "    sete al\n");
+                fprintf(file, "    movzx rax, al\n");
+            }
+            // Comparaison pour "!="
+            else if (strcmp(node->variable, "!=") == 0)
+            {
+                fprintf(file, "    cmp rax, rbx\n");
+                fprintf(file, "    setne al\n");
                 fprintf(file, "    movzx rax, al\n");
             }
         }
         else
         {
-            // ✅ Charger une valeur (nombre ou variable)
-            if (isdigit(node->variable[0])) // Nombre
+            // Charger une valeur (nombre ou variable)
+            if (isdigit(node->variable[0]))
                 fprintf(file, "    mov rax, %s\n", node->variable);
             else
                 fprintf(file, "    mov rax, [%s]\n", node->variable);
@@ -107,12 +148,12 @@ void generate_assembly_from_ast(FILE *file, ASTNode *node)
         fprintf(file, "    cmp rax, 1\n");
         fprintf(file, "    jne else_%d\n", label_if);
 
-        // ✅ Bloc IF
+        // Bloc IF
         fprintf(file, "if_%d:\n", label_if);
         generate_assembly_from_ast(file, node->then_branch);
         fprintf(file, "    jmp end_%d\n", label_end);
 
-        // ✅ Bloc ELSE
+        // Bloc ELSE
         fprintf(file, "else_%d:\n", label_if);
         if (node->else_branch)
             generate_assembly_from_ast(file, node->else_branch);
@@ -150,14 +191,14 @@ void save_assembly_to_file(ASTNode *ast, const char *filename)
         return;
     }
 
-    // ✅ Ajout du format printf
+    // Ajout du format printf
     fprintf(file, "section .data\n");
-    fprintf(file, "    format db \"%%d\", 10, 0\n"); // "%d\n"
+    fprintf(file, "    format db \"%%d\", 10, 0\n");
 
-    // ✅ Section `.bss` pour les variables non initialisées
+    // Section .bss pour les variables non initialisées
     fprintf(file, "section .bss\n");
 
-    // 🔹 Stocker les noms des variables pour éviter les doublons
+    // Stocker les noms des variables pour éviter les doublons
     char declared_vars[100][MAX_TOKEN_LENGTH];
     int declared_count = 0;
 
@@ -166,7 +207,6 @@ void save_assembly_to_file(ASTNode *ast, const char *filename)
     {
         if (current->type == NODE_DECLARATION)
         {
-            // Vérifier si la variable a déjà été déclarée
             bool already_declared = false;
             for (int i = 0; i < declared_count; i++)
             {
@@ -177,7 +217,6 @@ void save_assembly_to_file(ASTNode *ast, const char *filename)
                 }
             }
 
-            // ✅ Ajouter la variable si elle n'a pas encore été déclarée
             if (!already_declared)
             {
                 fprintf(file, "    %s resq 1\n", current->variable);
@@ -187,7 +226,7 @@ void save_assembly_to_file(ASTNode *ast, const char *filename)
         current = current->next;
     }
 
-    // ✅ Section `.text` (code exécutable)
+    // Section .text (code exécutable)
     fprintf(file, "section .text\n");
     fprintf(file, "global _start\n");
     fprintf(file, "extern printf\n\n");

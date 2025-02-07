@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
         // ✅ Génération du fichier DOT pour la visualisation de l'AST
         print_ast_tree(ast, 0, 0);
         save_ast_to_dot(ast, "ast.dot");
-        system("sh /home/batiste/Documents/B4lang/convert_dot_to_png.sh");
+        system("sh /home/batiste//Documents/B4Lang/convert_dot_to_png.sh");
 
         // ✅ Génération du fichier assembleur
         printf("\nGénération du code assembleur...\n");
